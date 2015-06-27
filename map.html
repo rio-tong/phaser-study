@@ -1,0 +1,177 @@
+<!doctype html> 
+<html manifest="yqt.appcache"> 
+<head> 
+	<meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+	<title>Phaser - Making your first game, part 2</title>
+    <script src="/2.3.0/phaser.min.js"></script>
+    <style type="text/css">
+        html, body {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+<script type="text/javascript">
+
+var game = new Phaser.Game(window.innerWidth*window.devicePixelRatio, window.innerHeight*window.devicePixelRatio, Phaser.AUTO, '', 
+                           { preload: preload, create: create, update: update });
+
+var cursors;
+var downPointerPos = {x:-1, y: -1, camX: -1, camY: -1};
+var prevPointer = {distance:-1, camX: 0};
+var bgScale = 1;
+var minbgScale = 0.5;
+var maxbgScale = 1;
+var worldWidth = 4288;
+var worldHeight = 2848;
+    
+function preload() 
+{
+    //game.load.spritesheet('dude', 'assets/dude.png', 32, 48);
+    game.load.image('bg', 'assets/farm4k.jpg');
+}
+
+function scale(gfxObj)
+{
+    gfxObj.scale.setTo(bgScale, bgScale);
+    //game.world.setBounds(0, 0, worldWidth*bgScale, worldHeight*bgScale);    
+    //console.log("Camera :" + game.camera.x + "x" + game.camera.y);
+}
+    
+function create()
+{    
+    console.log("Window size:" + window.innerWidth + "x" + window.innerHeight);
+    
+    var viewWidth = window.innerWidth;
+    var viewHeight = window.innerHeight;
+    minbgScale = Math.max(viewWidth*window.devicePixelRatio/worldWidth,
+                             viewHeight*window.devicePixelRatio/worldHeight);
+                             
+    var styleFunc = function() {
+        game.canvas.style.width = viewWidth + "px";
+        game.canvas.style.height = viewHeight + "px";         
+    };
+    document.documentElement.onfocus = styleFunc;
+    setTimeout(styleFunc, 0);
+    
+    // support three fingers at most   
+    game.input.addPointer();
+
+    game.camera.setSize(viewWidth*window.devicePixelRatio, viewHeight*window.devicePixelRatio);    
+    
+    var bg = game.add.image(0, 0, 'bg');
+    
+    game.world.setBounds(0, 0, worldWidth*bgScale, worldHeight*bgScale);
+    scale(bg);  
+    
+    game.input.touch.preventDefault = true;
+    
+    game.input.touch.touchStartCallback = function(evt) {        
+        console.log("TouchStart "+ evt.changedTouches.length);
+        
+        downPointerPos.x = evt.touches[0].clientX;
+        downPointerPos.y = evt.touches[0].clientY;        
+        downPointerPos.camX = game.camera.x;
+        downPointerPos.camY = game.camera.y;
+    };
+    
+    game.input.touch.touchEndCallback = function(evt) {
+        console.log("TouchEnd "+ evt.changedTouches.length);
+        
+        if (game.input.totalActivePointers == 1)
+        {
+            prevPointer.distance = -1;
+            prevPointer.zoomIn = false;
+            console.log("Reset previous distance");  
+        }
+        
+        downPointerPos = {x:-1, y: -1, camX: -1, camY: -1};        
+    };
+
+    
+    game.input.addMoveCallback(function(evt, x, y) {
+        if (game.input.totalActivePointers == 2
+            && game.input.pointer1.isDown
+            && game.input.pointer2.isDown)
+        {
+            // zooming
+            distance = Phaser.Math.distance(game.input.pointer1.x, game.input.pointer1.y,
+                                            game.input.pointer2.x, game.input.pointer2.y);
+            if (prevPointer.distance == -1)
+            {
+                prevPointer.distance = distance;
+                prevPointer.zoomIn = false;
+                prevPointer.scale = bgScale;
+                prevPointer.camX = game.camera.x;
+            }
+            else
+            {   var zoomIn;             
+                delta = distance - prevPointer.distance;
+                if (delta > 0)
+                {
+                    zoomIn = true;
+                    //console.log("Zoom in.");
+                }
+                else if (delta < 0)
+                {                    
+                    zoomIn = false;
+                    //console.log("Zoom out.");
+                }
+                
+                if (zoomIn != prevPointer.zoomIn)
+                {
+                    console.log("Switch zoom direction.");
+                    prevPointer.distance = distance;
+                    prevPointer.zoomIn = zoomIn;
+                    return;
+                }
+                
+                bgScale = prevPointer.scale*distance/prevPointer.distance;
+                
+                if (bgScale > maxbgScale)
+                    bgScale = maxbgScale;
+                if (bgScale < minbgScale)
+                    bgScale = minbgScale;
+                
+                //console.log("World scale: " + bgScale);
+                
+                scale(bg);                 
+            }
+        }
+        else if (game.input.totalActivePointers == 1)
+        {
+            // drag
+            if (downPointerPos.x == -1
+               && downPointerPos.y == -1)
+                return;
+
+            dx = x - downPointerPos.x;
+            dy = y - downPointerPos.y;
+            
+            var maxCamX = worldWidth*bgScale - game.canvas.width;
+            var maxCamY = worldHeight*bgScale - game.canvas.height;
+            
+            game.camera.x = Math.min(maxCamX, downPointerPos.camX - dx*window.devicePixelRatio);
+            game.camera.y = Math.min(maxCamY, downPointerPos.camY - dy*window.devicePixelRatio);        
+            
+            console.log(game.camera.x +"x"+ game.camera.y);
+        }
+    });
+    /* exclusive with down and up pair events
+    game.input.onTap.add(function(evt) {
+        alert("Handling tap event.");
+    });
+    */
+}
+
+function update() 
+{
+
+}
+
+</script>
+
+</body>   
+</html>
