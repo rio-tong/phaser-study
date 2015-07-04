@@ -18,7 +18,7 @@
 var game = new Phaser.Game(window.innerWidth*window.devicePixelRatio, window.innerHeight*window.devicePixelRatio, Phaser.AUTO, '', 
                            { preload: preload, create: create, update: update });
 
-var cursors;
+var map;
 var downPointerPos = {x:-1, y: -1, camX: -1, camY: -1};
 var prevPointer = {distance:-1, camX: 0};
 var bgScale = 1;
@@ -36,7 +36,15 @@ function preload()
 function scale(gfxObj)
 {
     gfxObj.scale.setTo(bgScale, bgScale);
-    //game.world.setBounds(0, 0, worldWidth*bgScale, worldHeight*bgScale);    
+    if (game.camera.height + game.camera.y > gfxObj.height)
+    {
+        game.camera.y -= game.camera.height + game.camera.y - gfxObj.height;
+        
+    }
+    if (game.camera.width + game.camera.x > gfxObj.width)
+    {
+        game.camera.x -= game.camera.width + game.camera.x - gfxObj.width;
+    }    
     //console.log("Camera :" + game.camera.x + "x" + game.camera.y);
 }
     
@@ -61,10 +69,10 @@ function create()
 
     game.camera.setSize(viewWidth*window.devicePixelRatio, viewHeight*window.devicePixelRatio);    
     
-    var bg = game.add.image(0, 0, 'bg');
+    map = game.add.image(0, 0, 'bg');
     
     game.world.setBounds(0, 0, worldWidth*bgScale, worldHeight*bgScale);
-    scale(bg);  
+    scale(map);  
     
     game.input.touch.preventDefault = true;
     
@@ -135,9 +143,9 @@ function create()
                 if (bgScale < minbgScale)
                     bgScale = minbgScale;
                 
-                //console.log("World scale: " + bgScale);
+                console.log("Scale: " + bgScale);
                 
-                scale(bg);                 
+                scale(map);                 
             }
         }
         else if (game.input.totalActivePointers == 1)
