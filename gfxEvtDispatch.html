@@ -1,0 +1,144 @@
+<!doctype html> 
+<html lang="en"> 
+<head> 
+	<meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+	<title>Phaser - Making your first game, part 3</title>
+    <script src="/2.3.0/phaser.min.js"></script>
+    <style type="text/css">
+        html, body {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+<script type="text/javascript">
+
+var game = new Phaser.Game(window.innerWidth*window.devicePixelRatio, 
+                           window.innerHeight*window.devicePixelRatio, Phaser.AUTO, '', 
+                           { preload: preload, create: create, update: update });
+
+var downPointerPos = {x:-1,y:-1};
+var buttonHashX = [];
+var buttonHashY = [];
+var dashButton = 1;
+    
+function preload() {
+
+
+}
+
+
+    
+function drawButton(ratio)
+{
+    var graphics = game.add.graphics(0, game.world.centerY);
+
+    //  And this draws a filled arc
+    graphics.beginFill(65536*28 + 256*135 + 189);
+    graphics.drawRect(0, 0, game.world.width, 60*ratio);
+    graphics.endFill();
+    
+    graphics.beginFill(0, 0.5);
+    graphics.drawRect(0, 0, game.world.width, 60*ratio);
+    graphics.endFill();
+    
+    var gfx2 = game.add.graphics(0, game.world.centerY); 
+    gfx2.beginFill(0xFFFFFF);
+    for (i = 0; i < 3; i ++)
+    {
+        for (j = 0; j < 3; j ++)
+        {
+            gfx2.drawRect((5 + j*16)*ratio, (5 + i*16)*ratio, 15*ratio, 15*ratio);
+        }
+    }    
+    gfx2.endFill();
+    
+    //console.log(gfx2.getBounds());
+    var rect = gfx2.getBounds();
+    rect.x += gfx2.x; 
+    rect.y += gfx2.y;
+    rect.x /= ratio;
+    rect.y /= ratio;
+    rect.width /= ratio;
+    rect.height /= ratio;
+    var i = Math.round(rect.x);
+    console.log(i);
+    for (; i < rect.x + rect.width; ++ i)
+    {
+        buttonHashX[i] = dashButton;        
+    }
+    console.log(i);
+    i = Math.round(rect.y);
+    console.log(i);
+    for (; i < rect.y + rect.height; ++ i)
+    {
+        buttonHashY[i] = dashButton;
+    }
+    console.log(i);     
+}
+    
+function create() {
+    var ratio = window.devicePixelRatio;
+    
+    var viewWidth = window.innerWidth;
+    var viewHeight = window.innerHeight;
+
+    var styleFunc = function() {
+        game.canvas.style.width = viewWidth + "px";
+        game.canvas.style.height = viewHeight + "px";         
+    };
+    setTimeout(styleFunc, 0);
+    
+    
+    drawButton(ratio);
+    
+    
+    game.input.touch.touchStartCallback = function(evt) {        
+        console.log("TouchStart "+ evt.changedTouches.length);
+        if (game.input.totalActivePointers == 0)
+        {
+            downPointerPos.x = evt.changedTouches[0].clientX;
+            downPointerPos.y = evt.changedTouches[0].clientY;
+            downPointerPos.tms = evt.timeStamp;
+        }
+    };
+    
+    game.input.touch.touchEndCallback = function(evt) {
+        console.log("TouchEnd "+ evt.changedTouches.length);        
+        if (game.input.totalActivePointers == 1)
+        {
+            var x = evt.changedTouches[0].clientX;
+            var y = evt.changedTouches[0].clientY;
+            if (x == downPointerPos.x
+               && y == downPointerPos.y
+               && evt.timeStamp - downPointerPos.tms < 500)
+            {
+                //tap happens
+                console.log("Tap event: " + x + "x" + y);
+                
+                if (buttonHashX[Math.round(x)] !== undefined
+                   && buttonHashY[Math.round(y)] !== undefined)
+                {
+                    if (buttonHashX[Math.round(x)] == dashButton
+                        && buttonHashY[Math.round(y)] == dashButton)
+                        console.log("Opening dash board.");
+                }
+                
+                downPointerPos.x = -1;
+                downPointerPos.y = -1;
+            }
+        }  
+    };
+}
+
+function update() {
+    
+
+}
+
+</script>
+
+</body>
+</html>
